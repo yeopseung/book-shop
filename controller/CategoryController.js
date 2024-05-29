@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const allCategory = (req, res) => {
-  const sql = "SELECT * FROM category";
+  const sql = "SELECT * FROM categories";
 
   conn.query(sql, (err, results) => {
     if (err) {
