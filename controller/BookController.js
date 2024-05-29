@@ -44,7 +44,7 @@ const bookDetail = (req, res) => {
   const sql = `SELECT * ,
     (SELECT count(*) FROM likes WHERE books.id = liked_book_id) AS likes,
     (SELECT EXISTS(SELECT * from likes WHERE user_id=? AND liked_book_id=?)) AS liked 
-    FROM books LEFT JOIN category ON books.category_id = category.category_id WHERE books.id = ?`;
+    FROM books LEFT JOIN categories ON books.category_id = category.category_id WHERE books.id = ?`;
 
   const values = [user_id, book_id, book_id];
 
