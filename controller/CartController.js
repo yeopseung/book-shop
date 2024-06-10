@@ -1,13 +1,11 @@
 const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
-
-dotenv.config();
+const ensureAuthorization = require("../auth");
 
 const addToCart = (req, res) => {
   const { book_id, quantity } = req.body;
-  const authorization = ensureAuthorization(req, res);
+  const authorization = ensureAuthorization(req);
 
   if (authorization instanceof jwt.TokenExpiredError) {
     return res
@@ -34,7 +32,7 @@ const addToCart = (req, res) => {
 
 const getCartItems = (req, res) => {
   const { selected } = req.body;
-  const authorization = ensureAuthorization(req, res);
+  const authorization = ensureAuthorization(req);
 
   if (authorization instanceof jwt.TokenExpiredError) {
     return res
@@ -46,10 +44,14 @@ const getCartItems = (req, res) => {
       .json({ message: "잘못된 토큰입니다." });
   }
 
-  const sql = `SELECT cart_items.id, book_id, title, summary, quantity, price 
+  let sql = `SELECT cart_items.id, book_id, title, summary, quantity, price 
     FROM cart_items LEFT JOIN books ON cart_items.book_id = books.id
-    WHERE user_id=? AND cart_items.id IN(?)`;
+    WHERE user_id=?`;
   const values = [authorization.id, selected];
+
+  if (selected) {
+    sql += "AND cart_items.id IN(?)";
+  }
 
   conn.query(sql, values, (err, results) => {
     if (err) {
@@ -73,16 +75,6 @@ const removeCartItem = (req, res) => {
 
     return res.status(StatusCodes.OK).json(results);
   });
-};
-
-const ensureAuthorization = (req, res) => {
-  try {
-    const receivedJwt = req.headers["authorization"];
-    const decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-    return decodedJwt;
-  } catch (error) {
-    return error;
-  }
 };
 
 module.exports = {

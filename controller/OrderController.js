@@ -1,10 +1,21 @@
 const mariadb = require("mysql2/promise");
-const { StatusCodes, OK } = require("http-status-codes");
+const { StatusCodes } = require("http-status-codes");
 const dotenv = require("dotenv");
+const ensureAuthorization = require("../auth");
 
 dotenv.config();
 
 const order = async (req, res) => {
+  if (authorization instanceof jwt.TokenExpiredError) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "로그인 세션이 만료되었습니다. 다시 로그인 하세요." });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "잘못된 토큰입니다." });
+  }
+
   const conn = await mariadb.createConnection({
     host: "127.0.0.1",
     user: "root",
@@ -13,7 +24,7 @@ const order = async (req, res) => {
     dateStrings: true,
   });
 
-  const { items, delivery, totalQuantity, totalPrice, userId, firstBookTitle } =
+  const { items, delivery, totalQuantity, totalPrice, firstBookTitle } =
     req.body;
 
   // 배송 데이터 삽입
@@ -25,7 +36,7 @@ const order = async (req, res) => {
   // 주문 데이터 삽입
   sql =
     "INSERT INTO orders(book_title, total_quantity, total_price, user_id, delivery_id) VALUES(?,?,?,?,?)";
-  values = [firstBookTitle, totalQuantity, totalPrice, userId, deliveryId];
+  values = [firstBookTitle, totalQuantity, totalPrice, authorization.id, deliveryId];
   [results] = await conn.execute(sql, values);
   const orderId = results.insertId;
 
@@ -57,6 +68,16 @@ const deleteCartItems = async (conn, items) => {
 };
 
 const getOrders = async (req, res) => {
+  if (authorization instanceof jwt.TokenExpiredError) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "로그인 세션이 만료되었습니다. 다시 로그인 하세요." });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "잘못된 토큰입니다." });
+  }
+
   const conn = await mariadb.createConnection({
     host: "127.0.0.1",
     user: "root",
@@ -74,7 +95,17 @@ const getOrders = async (req, res) => {
 };
 
 const getOrderDetail = async (req, res) => {
-  const { id } = req.params;
+  if (authorization instanceof jwt.TokenExpiredError) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "로그인 세션이 만료되었습니다. 다시 로그인 하세요." });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "잘못된 토큰입니다." });
+  }
+  
+  const orderId = req.params;
 
   const conn = await mariadb.createConnection({
     host: "127.0.0.1",
@@ -88,7 +119,7 @@ const getOrderDetail = async (req, res) => {
         FROM ordered_books LEFT JOIN books ON ordered_books.book_id = books.id 
         WHERE order_id = ?`;
 
-  const [rows, fields] = await conn.query(sql, id);
+  const [rows, fields] = await conn.query(sql, orderId);
 
   return res.status(StatusCodes.OK).json(rows);
 };

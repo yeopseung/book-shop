@@ -1,13 +1,11 @@
 const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
-const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
-
-dotenv.config();
+const ensureAuthorization = require("../auth");
 
 const addLike = (req, res) => {
   const book_id = req.params.id;
-  const authorization = ensureAuthorization(req, res);
+  const authorization = ensureAuthorization(req);
 
   if (authorization instanceof jwt.TokenExpiredError) {
     return res
@@ -19,9 +17,11 @@ const addLike = (req, res) => {
       .json({ message: "잘못된 토큰입니다." });
   }
 
+  console.log(authorization);
+
   const sql = "INSERT INTO likes (user_id, liked_book_id) VALUES(?,?)";
-  const vlaues = [authorization.id, book_id];
-  conn.query(sql, vlaues, (err, results) => {
+  const values = [authorization.id, book_id];
+  conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -33,7 +33,7 @@ const addLike = (req, res) => {
 
 const removeLike = (req, res) => {
   const book_id = req.params.id;
-  const authorization = ensureAuthorization(req, res);
+  const authorization = ensureAuthorization(req);
 
   if (authorization instanceof jwt.TokenExpiredError) {
     return res
@@ -55,16 +55,6 @@ const removeLike = (req, res) => {
 
     return res.status(StatusCodes.OK).json(results);
   });
-};
-
-const ensureAuthorization = (req, res) => {
-  try {
-    const receivedJwt = req.headers["authorization"];
-    const decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-    return decodedJwt;
-  } catch (error) {
-    return error;
-  }
 };
 
 module.exports = {
