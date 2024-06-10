@@ -8,7 +8,6 @@ dotenv.config();
 
 const join = (req, res) => {
   const { email, password } = req.body;
-  const sql = "INSERT INTO users (email, password, salt) VALUES(?,?,?)";
 
   // 비밀번호 암호화
   const salt = crypto.randomBytes(64).toString("base64"); // 64로 랜덤바이트 생성
@@ -16,6 +15,7 @@ const join = (req, res) => {
     .pbkdf2Sync(password, salt, 10000, 64, "sha512")
     .toString("base64");
 
+  const sql = "INSERT INTO users (email, password, salt) VALUES(?,?,?)";
   const values = [email, hashPassword, salt];
   conn.query(sql, values, (err, results) => {
     if (err) {
@@ -41,13 +41,14 @@ const login = (req, res) => {
 
     // 전달받은 비밀번호 암호화
     const hashPassword = crypto
-      .pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512")
+      .pbkdf2Sync(password, loginUser.salt, 10000, 64, "sha512")
       .toString("base64");
 
     // 디비 비밀번호와 비교
     if (loginUser && loginUser.password == hashPassword) {
       const token = jwt.sign(
         {
+          id: loginUser.id,
           email: loginUser.email,
         },
         process.env.PRIVATE_KEY,
