@@ -1,4 +1,4 @@
-const conn = require("../mariadb");
+const conn = require("../config/mariadb");
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
