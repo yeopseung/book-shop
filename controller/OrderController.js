@@ -1,7 +1,7 @@
 const mariadb = require("mysql2/promise");
 const { StatusCodes } = require("http-status-codes");
 const dotenv = require("dotenv");
-const ensureAuthorization = require("../auth");
+const ensureAuthorization = require("../middlewares/auth");
 
 dotenv.config();
 

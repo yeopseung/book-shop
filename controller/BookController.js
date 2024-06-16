@@ -1,7 +1,7 @@
 const conn = require("../config/mariadb");
 const { StatusCodes } = require("http-status-codes");
 const dotenv = require("dotenv");
-const ensureAuthorization = require("../auth");
+const ensureAuthorization = require("../middlewares/auth");
 
 dotenv.config();
 
